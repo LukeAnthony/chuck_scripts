@@ -1,8 +1,10 @@
 // C - C#/Db - D - Eb - E - F - F#/Gb - G - G#/Ab - A - Bb - B - C
 // 0    1.     2.  3.   4.  5.  6.      7.  8.      9.  10.  11. 12
 
+// user will enter below keyboard keys to guess corresponding element in noteNames
+// "Q",   "W",   "E", "R",  "A", "S",   "D",   "F",   "Z",   "X",  "C", "V"
 [ "C", "C#/Db", "D", "Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "Bb", "B" ] @=> string noteNames[];
-[ "Q", "W", "E", "R", "A", "S", "D", "F", "Z", "X", "C", "V" ] @=> string keyboardKeysForNotes[]; 
+//"Q","W","E","R","A","S","D","F","Z","X","C","V"
 [ 81, 87, 69, 82, 65, 83, 68, 70, 90, 88, 67, 86 ] @=> int asciiNumbersForKeyboardKeys[];
 
 SinOsc osc => dac;
