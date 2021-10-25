@@ -3,6 +3,9 @@ Hid hi;
 // gets used to hold info that comes out of a HID
 HidMsg msg;
 
+Hid hi2;
+HidMsg msg2;
+
 if( !hi.openKeyboard( 1 ) ) me.exit();
 <<< "keyboard '" + hi.name() + "' ready", "" >>>;
 // "Q",   "W",   "E", "R",  "A", "S",   "D",   "F",   "Z",   "X",  "C", "V"
@@ -24,6 +27,19 @@ while( true ) {
                 }
             }
         }
-        
     }
+    
+    hi => now;
+    while( hi.recv(msg) )  {
+        if( msg.isButtonDown() ) {
+            <<< "down: ", msg.which, " ascii: ", msg.ascii >>>;
+            for( 0 => int i; i < asciiNumbersForKeyboardKeys.cap(); i++) {
+                if( msg.ascii == asciiNumbersForKeyboardKeys[i] ) {
+                    <<< "You second guessed: " + noteNames[i] >>>;
+                }
+            }
+        }
+    }
+
+       
 }
