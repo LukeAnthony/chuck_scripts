@@ -7,6 +7,10 @@
 //"Q","W","E","R","A","S","D","F","Z","X","C","V"
 [ 81, 87, 69, 82, 65, 83, 68, 70, 90, 88, 67, 86 ] @=> int asciiNumbersForKeyboardKeys[];
 
+class RandomNote {
+    int randomMidi;
+    float randomFreq;
+}
 
 // setting up user input
 HidMsg hidMessage;
@@ -15,42 +19,22 @@ if( !hid.openKeyboard( 1 ) ) me.exit();
 
 40 => int e2; // bass starts on E1 (midi 28), but that's too low to hear on my speakers
 
-// plays a random note or chord in the specified octave range
+// returns a random note in the specified octave range
 // with octave 1 being E2-E3 (MIDI 40-52), 2 being E3-E4 (MIDI 52-64)...
-fun string playRandom(string noteOrChord, int octave) {
-
-    if(noteOrChord == "chord") {
-        
-    } 
-    else if(noteOrChord == "note") {
-        // set octave range 
-        e2 + (12 * (octave - 1) ) => int lowestNote;
-        lowestNote + 12 => int highestNote;
-        // generate random Midi note
-        Std.rand2(lowestNote, highestNote) => int randomMidi;
-        // convert random midi to frequency
-        Std.mtof(randomMidi) => float freq;
-        SinOsc osc => getSinOsc();
-        // play random frequency
-        freq => osc.freq;
-        2::second => now;
-        // look up note of random frequency
-        noteNames[randomMidi % 12] => string noteName;
-        getUserInput() => string userGuess;
-        <<< "You guessed: " + userGuess >>>;
-        <<< "That note was: " + noteName>>>;
-    }
-    else {
-     <<< "Enter 'note' or 'chord' next time" >>>;   
-    }
-    
-    <<< "" >>>;
-    <<< "" >>>;
-    <<< "" >>>;
+fun RandomNote getRandomNote(int octave) {
+    RandomNote randomNote;
+    // set octave range 
+    e2 + (12 * (octave - 1) ) => int lowestNote;
+    lowestNote + 12 => int highestNote;
+    // generate random Midi note
+    Std.rand2(lowestNote, highestNote) => randomNote.randomMidi;
+    // convert random midi to frequency
+    Std.mtof(randomNote.randomMidi) => randomNote.randomFreq;
+    return randomNote;
 }
 
 fun string getUserInput() {
-    <<< "What note do you think that was?" >>>;
+    <<< "What note do you think this is?" >>>;
     <<< "Hit 'Q'->C, 'W'->C#/Db, 'E'->D, 'R'->Eb, 'A'->E, 'S'->F, 'D'->F#/Gb, 'F'->G, 'Z'->G#/Ab, 'X'->A, 'C'->Bb, 'V'->B" >>>;
     // wait to receive a message
     int asciiNumbersForKeyboardKeysIndex;
@@ -64,14 +48,9 @@ fun string getUserInput() {
                 }
             }
         }
+        100::ms => now;
     }
     return noteNames[asciiNumbersForKeyboardKeysIndex];
-}
-
-fun SinOsc getSinOsc() {
-    SinOsc osc => dac;
-    0.5 => osc.gain;
-    return osc;
 }
 
 0 => int correctGuesses;
@@ -79,28 +58,53 @@ fun SinOsc getSinOsc() {
 0.00 => float percentCorrect;
 
 while( true ) {
-    string noteOrChord;
+    // 0 = chord, 1 = true
+    int note;
     int octaveSelection;
-    <<< "Press N to hear a note or C to hear a chord?" >>>;
+    
+    
     // 67 = C, 78 = N
+    <<< "Press N to hear a note or C to hear a chord?" >>>;
     hid => now;
     while( hid.recv(hidMessage) )  {
         if( hidMessage.isButtonDown() ) { 
             if( hidMessage.ascii == 67  ) {
-                "chord" => noteOrChord;
+                0 => note;;
             } else if (hidMessage.ascii == 78 ) {
-                "note" => noteOrChord;
+                1 => note;
             }
+            100::ms => now;
         }
     }
+
     <<< "Press a number for the octave range, with 1->E1, 2->E2...." >>>;
     hid => now;
     while( hid.recv(hidMessage) )  {
         if( hidMessage.isButtonDown() ) { 
             hidMessage.ascii - 48 => octaveSelection;
         }
+        100::ms => now;
     }
-    playRandom(noteOrChord, octaveSelection);
+    // TODO getRandomChord
+    getRandomNote(octaveSelection) @=> RandomNote randomNote;
 
+
+    // play random frequency
+    SinOsc osc => dac;
+    0.5 => osc.gain;  
+    // second, third, and fourth oscillators are how we get chords
+    SinOsc osc2 => dac;
+    0.5 => osc2.gain; 
+    randomNote.randomFreq + 50 => osc2.freq;
+    randomNote.randomFreq => osc.freq;
+    2::second => now;
+    // look up note of random frequency
+    noteNames[randomNote.randomMidi % 12] => string noteName;
+    getUserInput() => string userGuess;
+    <<< "You guessed: " + userGuess >>>;
+    <<< "That note was: " + noteName>>>;
+    // providing time to match the note before stopping it
+    5::second => now;
+    0 => osc.freq;
 }
 
