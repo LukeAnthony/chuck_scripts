@@ -12,6 +12,20 @@ class RandomNote {
     float randomFreq;
 }
 
+class RandonChord {
+    // serves as root note
+    int randomMidi;
+    // array of chord tones
+    float randomFreqs[];
+}
+
+SinOsc firstToneOsc => dac; 0 => firstToneOsc.freq;
+// below will be used for chords
+SinOsc secondToneOsc => dac; 0 => secondToneOsc.freq;
+SinOsc thirdToneOsc => dac; 0 => thirdToneOsc.freq;
+SinOsc fourthToneOsc => dac; 0 => fourthToneOsc.freq;
+SinOsc fifthToneOsc => dac; 0 => fifthToneOsc.freq;
+
 // setting up user input
 HidMsg hidMessage;
 Hid hid;
@@ -53,15 +67,31 @@ fun string getUserInput() {
     return noteNames[asciiNumbersForKeyboardKeysIndex];
 }
 
+// TODO factor these in
 0 => int correctGuesses;
 0 => int totalAttempts;
 0.00 => float percentCorrect;
 
+
+fun void playRandomNote(RandomNote randomNote) {
+    0.5 => firstToneOsc.gain;  
+    randomNote.randomFreq => firstToneOsc.freq;
+    2::second => now;
+    // look up random note frequency
+    noteNames[randomNote.randomMidi % 12] => string noteName;
+    getUserInput() => string userGuess;
+    <<< "You guessed: " + userGuess >>>;
+    <<< "That note was: " + noteName>>>;
+    // providing time to match the note before stopping it
+    5::second => now;
+    0 => firstToneOsc.freq;
+}
+
+    
 while( true ) {
     // 0 = chord, 1 = true
     int note;
     int octaveSelection;
-    
     
     // 67 = C, 78 = N
     <<< "Press N to hear a note or C to hear a chord?" >>>;
@@ -69,9 +99,15 @@ while( true ) {
     while( hid.recv(hidMessage) )  {
         if( hidMessage.isButtonDown() ) { 
             if( hidMessage.ascii == 67  ) {
+                // TODO remove
                 0 => note;;
+                <<< "Chords not supported yet" >>>;
+                me.exit();
             } else if (hidMessage.ascii == 78 ) {
                 1 => note;
+            } else {
+                <<< "Don't recognize the input. Restart program and try again" >>>;
+                me.exit();
             }
             100::ms => now;
         }
@@ -85,26 +121,12 @@ while( true ) {
         }
         100::ms => now;
     }
+    
     // TODO getRandomChord
-    getRandomNote(octaveSelection) @=> RandomNote randomNote;
-
-
-    // play random frequency
-    SinOsc osc => dac;
-    0.5 => osc.gain;  
-    // second, third, and fourth oscillators are how we get chords
-    SinOsc osc2 => dac;
-    0.5 => osc2.gain; 
-    randomNote.randomFreq + 50 => osc2.freq;
-    randomNote.randomFreq => osc.freq;
-    2::second => now;
-    // look up note of random frequency
-    noteNames[randomNote.randomMidi % 12] => string noteName;
-    getUserInput() => string userGuess;
-    <<< "You guessed: " + userGuess >>>;
-    <<< "That note was: " + noteName>>>;
-    // providing time to match the note before stopping it
-    5::second => now;
-    0 => osc.freq;
+    if( 1 == note ) {
+        getRandomNote(octaveSelection) @=> RandomNote randomNote;
+        playRandomNote(randomNote);
+    }
+    
 }
 
