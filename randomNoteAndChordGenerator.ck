@@ -12,7 +12,7 @@ class RandomNote {
     float randomFreq;
 }
 
-class RandonChord {
+class RandomChord {
     // serves as root note
     int randomMidi;
     // array of chord tones
@@ -33,13 +33,14 @@ if( !hid.openKeyboard( 1 ) ) me.exit();
 
 40 => int e2; // bass starts on E1 (midi 28), but that's too low to hear on my speakers
 
-// returns a random note in the specified octave range
+// returns a random note in the specified octave and range
 // with octave 1 being E2-E3 (MIDI 40-52), 2 being E3-E4 (MIDI 52-64)...
-fun RandomNote getRandomNote(int octave) {
+// and range defining the number of random notes after the octave root to choose from
+fun RandomNote getRandomNote(int octave, int range) {
     RandomNote randomNote;
     // set octave range 
     e2 + (12 * (octave - 1) ) => int lowestNote;
-    lowestNote + 12 => int highestNote;
+    lowestNote + range => int highestNote;
     // generate random Midi note
     Std.rand2(lowestNote, highestNote) => randomNote.randomMidi;
     // convert random midi to frequency
@@ -74,9 +75,9 @@ fun string getUserInput() {
 
 
 fun void playRandomNote(RandomNote randomNote) {
-    0.5 => firstToneOsc.gain;  
+    0.1 => firstToneOsc.gain;  
     randomNote.randomFreq => firstToneOsc.freq;
-    2::second => now;
+    5::second => now;
     // look up random note frequency
     noteNames[randomNote.randomMidi % 12] => string noteName;
     getUserInput() => string userGuess;
@@ -124,7 +125,8 @@ while( true ) {
     
     // TODO getRandomChord
     if( 1 == note ) {
-        getRandomNote(octaveSelection) @=> RandomNote randomNote;
+        // should just play E
+        getRandomNote(octaveSelection, 0) @=> RandomNote randomNote;
         playRandomNote(randomNote);
     }
     
