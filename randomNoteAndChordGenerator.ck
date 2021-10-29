@@ -1,4 +1,4 @@
-// C - C#/Db - D - Eb - E - F - F#/Gb - G - G#/Ab - A - Bb - B - C
+// C - C#/Db - D - D#/Eb - E - F - F#/Gb - G - G#/Ab - A - A#/Bb - B - C
 // 0    1.     2.  3.   4.  5.  6.      7.  8.      9.  10.  11. 12
 
 // user will enter below keyboard keys to guess corresponding element in noteNames
@@ -51,34 +51,37 @@ fun RandomChord getRandomChord(int octave, int range) {
     randomFloor + range => int randomCeiling;
     // generate random Midi note that will be the root of the chord
     Std.rand2(randomFloor, randomCeiling) => randomChord.randomRootMidi;
-    int thirdMidi;
-    int fifthMidi;
-    int seventhMidi;
-    // maybe generates a random value of 0 or 1. 0 = minor, 1 = major,
-    maybe => int majorOrMinor;
+    int thirdMidi; int fifthMidi; int seventhMidi;
+    // 0 = minor, 1 = major,
+    Std.rand2(0,1) => int isMajorOrMinor;
     // 0 = triad, 1 = 7th
-    maybe => int seventhChord;
+    Std.rand2(0,1) => int isSeventhChord;
     // if major
-    if( majorOrMinor ) {
+    if( isMajorOrMinor == 1 ) {
+        isMajorOrMinor => randomChord.majorOrMinor;
         // major chord = root, major 3rd, perfect 5th, (major 7th)
         randomChord.randomRootMidi + 4 => thirdMidi;
         randomChord.randomRootMidi + 7 => fifthMidi;
-        if(seventhChord) {
+        if( isSeventhChord == 1 ) {
             randomChord.randomRootMidi + 11 => seventhMidi;
+            0 => randomChord.triadOrSeventh;
+        } else {
             1 => randomChord.triadOrSeventh;
         }
-        1 => randomChord.majorOrMinor;
+
     }
     // if minor
     else {
+        isMajorOrMinor => randomChord.majorOrMinor;
         // minor chord = root, minor 3rd, perfect 5th, (minor 7th)
         randomChord.randomRootMidi + 3 => thirdMidi;
         randomChord.randomRootMidi + 7 => fifthMidi;
-        if(seventhChord) {
+        if( isSeventhChord == 1) {
             randomChord.randomRootMidi + 10 => seventhMidi;
+            0 => randomChord.triadOrSeventh;
+        } else {
             1 => randomChord.triadOrSeventh;
         }
-        0 => randomChord.majorOrMinor;
     }
     [ Std.mtof(randomChord.randomRootMidi), Std.mtof(thirdMidi), Std.mtof(fifthMidi), Std.mtof(seventhMidi) ] @=> randomChord.randomFreqs;
     [ randomChord.randomRootMidi, thirdMidi, fifthMidi, seventhMidi ] @=> randomChord.randomChordToneMidis;
@@ -126,7 +129,7 @@ fun void playRandomChord(RandomChord randomChord) {
     randomChord.randomFreqs[2] => thirdToneOsc.freq; randomChord.randomFreqs[3] => fourthToneOsc.freq;
     string chordToneNames[];
     // if triad
-    if( randomChord.triadOrSeventh) {
+    if( randomChord.triadOrSeventh == 1) {
         [ noteNames[randomChord.randomChordToneMidis[0] % 12], noteNames[randomChord.randomChordToneMidis[1] % 12], 
         noteNames[randomChord.randomChordToneMidis[2] % 12] ] @=> chordToneNames;
     }
@@ -141,7 +144,7 @@ fun void playRandomChord(RandomChord randomChord) {
     <<< "You guessed: " + userGuess >>>;
     <<< "That root note was: " + chordToneNames[0] >>>;
     // if triad
-    if( randomChord.triadOrSeventh) { 
+    if( randomChord.triadOrSeventh == 1) { 
         <<<  "The other tones were: " + chordToneNames[1] + " " + chordToneNames[2] >>>;
         <<< "The chord was a triad" >>>;
     } 
@@ -151,13 +154,15 @@ fun void playRandomChord(RandomChord randomChord) {
         <<< "The chord was a seventh" >>>;
     }
     
-    if( randomChord.majorOrMinor ) {
+    if( randomChord.majorOrMinor == 1 ) {
         <<< "The chord was major " >>>;
     } else {
      <<< "The chord was minor" >>>;    
     }
     if( userGuess == chordToneNames[0] ) {
-        1.00 + correctGuesses => correctGuesses;   
+        <<< "CORRECT" >>>;   
+    } else { 
+        <<< "WRONG" >>>; 
     }
     5::second => now;
     0 => firstToneOsc.freq; 0 => secondToneOsc.freq;
@@ -175,65 +180,63 @@ fun void playRandomNote(RandomNote randomNote) {
     <<< "You guessed: " + userGuess >>>;
     <<< "That note was: " + noteName>>>;
     if( userGuess == noteName ) {
-     1.00 + correctGuesses => correctGuesses;   
-    }
+        <<< "CORRECT" >>>;
+    } else {
+        <<< "WRONG" >>>;
+    }   
     // providing time to match the note before stopping it
     5::second => now;
     0 => firstToneOsc.freq;
 }
     
-while( true ) {
-    if( me.args() == 0 ) {
-        <<< "Need to specify the following command line arguments: random note range" >>>;
-        me.exit();   
-    }
-    <<< "Corect Guesses: " + correctGuesses >>>;
-    <<< "Total Attempts: " + totalAttempts >>>;
-    <<< "Percent Correct: " + percentCorrect + "%" >>>;
-    // 0 = chord, 1 = true
-    int note;
-    int octave;
-    // a random note will be selected between the octave and the octave + range
-    Std.atoi(me.arg(0)) => int range;
+// -------------- 
     
-    // 67 = C, 78 = N
-    <<< "Press N to hear a note or C to hear a chord?" >>>;
-    hid => now;
-    while( hid.recv(hidMessage) )  {
-        if( hidMessage.isButtonDown() ) { 
-            if( hidMessage.ascii == 67  ) {
-                0 => note;;
-            } else if (hidMessage.ascii == 78 ) {
-                1 => note;
-            } else {
-                <<< "Don't recognize the input. Restart program and try again" >>>;
-                me.exit();
-            }
-            100::ms => now;
-        }
-    }
+if( me.args() == 0 ) {
+    <<< "Need to specify the following command line arguments: random note range" >>>;
+    me.exit();   
+}
+// 0 = chord, 1 = true
+int note;
+int octave;
+// a random note will be selected between the octave and the octave + range
+Std.atoi(me.arg(0)) => int range;
+    
+// 67 = C, 78 = N
+<<< "Press N to hear a note or C to hear a chord?" >>>;
+hid => now;
 
-    <<< "Press a number for the octave range, with 1->E1, 2->E2...." >>>;
-    hid => now;
-    while( hid.recv(hidMessage) )  {
-        if( hidMessage.isButtonDown() ) { 
-            hidMessage.ascii - 48 => octave;
+while( hid.recv(hidMessage) )  {
+    if( hidMessage.isButtonDown() ) { 
+        if( hidMessage.ascii == 67  ) {
+            0 => note;;
+        } else if (hidMessage.ascii == 78 ) {
+            1 => note;
+        } else {
+            <<< "Don't recognize the input. Restart program and try again" >>>;
+            me.exit();
         }
         100::ms => now;
     }
-    
-    if( 0 == note ) {
-        getRandomChord(octave, range) @=> RandomChord randomChord;
-        playRandomChord(randomChord);
-    }
-    
-    if( 1 == note ) {
-        // should just play E
-        getRandomNote(octave, range) @=> RandomNote randomNote;
-        playRandomNote(randomNote);
-    }
-    
-    totalAttempts + 1.00 => totalAttempts;
-    100.00 * (correctGuesses / totalAttempts ) => percentCorrect;
 }
+
+<<< "Press a number for the octave range, with 1->E1, 2->E2...." >>>;
+hid => now;
+while( hid.recv(hidMessage) )  {
+    if( hidMessage.isButtonDown() ) { 
+        hidMessage.ascii - 48 => octave;
+    }
+    100::ms => now;
+}
+    
+if( 0 == note ) {
+    getRandomChord(octave, range) @=> RandomChord randomChord;
+    playRandomChord(randomChord);
+}
+    
+if( 1 == note ) {
+    // should just play E
+    getRandomNote(octave, range) @=> RandomNote randomNote;
+    playRandomNote(randomNote);
+}
+
 
