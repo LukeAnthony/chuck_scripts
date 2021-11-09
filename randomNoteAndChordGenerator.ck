@@ -104,9 +104,9 @@ fun RandomNote getRandomNote(int octave, int range) {
 }
 
 fun string getUserGuess() {
-    <<< "Hit 'Q'->C, 'W'->C#/Db, 'E'->D, 'R'->Eb, 'A'->E, 'S'->F, 'D'->F#/Gb, 'F'->G, 'Z'->G#/Ab, 'X'->A, 'C'->Bb, 'V'->B" >>>;
+    <<< "Hit 'Q'->C,     'W'->C#/Db,     'E'->D,     'R'->Eb,     'A'->E,     'S'->F,     'D'->F#/Gb,     'F'->G,     'Z'->G#/Ab,     'X'->A,      'C'->Bb,     'V'->B" >>>;
     // wait to receive a message
-    int asciiNumbersForKeyboardKeysIndex;
+    -1 => int asciiNumbersForKeyboardKeysIndex ;
     hid => now;
     while( hid.recv(hidMessage) )  { 
         if( hidMessage.isButtonDown() ) {
@@ -199,7 +199,7 @@ if( me.args() == 0 ) {
 int note;
 int octave;
 // a random note will be selected between the octave and the octave + range
-Std.atoi(me.arg(0)) => int range;
+Std.atoi(me.arg(0)) - 1 => int range;
     
 // 67 = C, 78 = N
 <<< "Press N to hear a note or C to hear a chord?" >>>;
